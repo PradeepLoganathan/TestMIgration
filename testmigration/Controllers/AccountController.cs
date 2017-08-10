@@ -210,6 +210,11 @@ namespace testmigration.Controllers
                 ViewData["ReturnUrl"] = returnUrl;
                 ViewData["LoginProvider"] = info.LoginProvider;
                 var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+                var name = info.Principal.FindFirstValue(ClaimTypes.Name);
+                var dob = info.Principal.FindFirstValue(ClaimTypes.DateOfBirth);
+                var gender = info.Principal.FindFirstValue(ClaimTypes.Gender);
+                var identifier = info.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+                //var picture = $ "https://graph.facebook.com/{identifier}/picture?type=large";
                 return View("ExternalLoginConfirmation", new ExternalLoginConfirmationViewModel { Email = email });
             }
         }
