@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.16
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "testmigration", "testmigration\testmigration.csproj", "{4EC0A483-8789-4F4A-B0D1-6FBB3D69E114}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationProviders", "NotificationProviders\NotificationProviders.csproj", "{AFDF598F-8584-4A36-92DC-47D7D2993922}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BusinessManagement", "BusinessManagement\BusinessManagement.csproj", "{43001C54-E2E6-43AA-8CA6-E610AE1A0A98}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4EC0A483-8789-4F4A-B0D1-6FBB3D69E114}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4EC0A483-8789-4F4A-B0D1-6FBB3D69E114}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4EC0A483-8789-4F4A-B0D1-6FBB3D69E114}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4EC0A483-8789-4F4A-B0D1-6FBB3D69E114}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFDF598F-8584-4A36-92DC-47D7D2993922}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFDF598F-8584-4A36-92DC-47D7D2993922}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFDF598F-8584-4A36-92DC-47D7D2993922}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFDF598F-8584-4A36-92DC-47D7D2993922}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43001C54-E2E6-43AA-8CA6-E610AE1A0A98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43001C54-E2E6-43AA-8CA6-E610AE1A0A98}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43001C54-E2E6-43AA-8CA6-E610AE1A0A98}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43001C54-E2E6-43AA-8CA6-E610AE1A0A98}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

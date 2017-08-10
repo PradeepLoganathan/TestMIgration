@@ -1,0 +1,20 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+<p class="text-success">@ViewData["StatusMessage"]</p>
+@if (ViewData["StatusMessage"] == "1")
+{
+<ul class="nav navbar-nav navbar-right">
+    <li> <span>Please login to Access this page, click here to</span><a asp-area="" asp-controller="Account" asp-action="Login">Log in</a></li>
+</ul>
+}
+else
+{<ul class="nav navbar-nav navbar-right">
+    <li>
+        <span>Hello user Welcome to our Site</span>
+    </li>
+
+</ul>
+}
