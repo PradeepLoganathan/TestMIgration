@@ -72,7 +72,11 @@ namespace testmigration.Controllers
                 TwoFactor = await _userManager.GetTwoFactorEnabledAsync(user),
                 Logins = await _userManager.GetLoginsAsync(user),
                 BrowserRemembered = await _signInManager.IsTwoFactorClientRememberedAsync(user),
-                IsAccessToAddEditUser = isAccessToAddEditUser
+                IsAccessToAddEditUser = isAccessToAddEditUser,
+                PictureUrl = user.PictureUrl,
+                DOB = user.DOB.ToString(),
+                FullName = user.FullName
+             
 
             };
             return View(model);

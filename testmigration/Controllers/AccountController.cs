@@ -194,6 +194,7 @@ namespace testmigration.Controllers
             if (result.Succeeded)
             {
                 _logger.LogInformation(5, "User logged in with {Name} provider.", info.LoginProvider);
+                
                 return RedirectToLocal(returnUrl);
             }
             if (result.RequiresTwoFactor)
@@ -210,11 +211,8 @@ namespace testmigration.Controllers
                 ViewData["ReturnUrl"] = returnUrl;
                 ViewData["LoginProvider"] = info.LoginProvider;
                 var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-                var name = info.Principal.FindFirstValue(ClaimTypes.Name);
-                var dob = info.Principal.FindFirstValue(ClaimTypes.DateOfBirth);
-                var gender = info.Principal.FindFirstValue(ClaimTypes.Gender);
-                var identifier = info.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
-                //var picture = $ "https://graph.facebook.com/{identifier}/picture?type=large";
+                
+                
                 return View("ExternalLoginConfirmation", new ExternalLoginConfirmationViewModel { Email = email });
             }
         }
@@ -234,10 +232,30 @@ namespace testmigration.Controllers
                 {
                     return View("ExternalLoginFailure");
                 }
-                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+                
+                var name = info.Principal.FindFirstValue(ClaimTypes.Name);
+                var dob = info.Principal.FindFirstValue(ClaimTypes.DateOfBirth);
+                var phoneNumber = info.Principal.FindFirstValue(ClaimTypes.MobilePhone);
+                var gender = info.Principal.FindFirstValue(ClaimTypes.Gender);
+                
+                 var identifier = info.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+                var picture = "";
+                if (info.LoginProvider == "Facebook")
+                {
+                     picture = $"https://graph.facebook.com/{identifier}/picture?type=large";
+                }
+                else
+                {
+                     picture = identifier;
+                }
+                
+                var user = new ApplicationUser { UserName = model.Email, Email = model.Email, DOB =null,FullName = name,PictureUrl =picture, PhoneNumber = phoneNumber };
                 var result = await _userManager.CreateAsync(user);
                 if (result.Succeeded)
                 {
+
+                    string roleName = "Candidate";
+                    IdentityResult roleResult = await _userManager.AddToRoleAsync(user, roleName);
                     result = await _userManager.AddLoginAsync(user, info);
                     if (result.Succeeded)
                     {

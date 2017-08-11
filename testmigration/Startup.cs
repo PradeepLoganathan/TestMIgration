@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -13,8 +13,9 @@ using testmigration.Data;
 using testmigration.Models;
 using testmigration.Services;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Http.Authentication;
+using Microsoft.AspNetCore.Authentication.OAuth;
+using Newtonsoft.Json.Linq;
+
 //using Microsoft.Owin.Security;
 namespace testmigration
 {
@@ -49,7 +50,7 @@ namespace testmigration
             services.AddIdentity<ApplicationUser, ApplicationRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
-            
+
             services.AddMvc();
 
 
@@ -57,7 +58,7 @@ namespace testmigration
             services.AddTransient<IEmailSender, AuthMessageSender>();
             services.AddTransient<ISmsSender, AuthMessageSender>();
         }
-        
+
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
@@ -75,10 +76,11 @@ namespace testmigration
             {
                 app.UseExceptionHandler("/Home/Error");
             }
-            
+
             app.UseStaticFiles();
 
             app.UseIdentity();
+            app.UseOAuthAuthentication(GitHubOptions);
             app.UseFacebookAuthentication(new FacebookOptions()
             {
                 AppId = Configuration["Authentication:Facebook:AppId"],
@@ -99,9 +101,9 @@ namespace testmigration
                 ClientId = Configuration["Authentication:Microsoft:ApplicationId"],
                 ClientSecret = Configuration["Authentication:Microsoft:Password"]
             });
-            
 
-            
+
+
             app.UseMvc(routes =>
             {
                 routes.MapRoute(
@@ -112,8 +114,74 @@ namespace testmigration
                 //name: "signin-facebook",
                 //template: "{controller=Account}/{action=ExternalLoginCallback}");
             });
-            
-            
+
+
+        }
+        private OAuthOptions GitHubOptions => new OAuthOptions
+        {
+            AuthenticationScheme = "GitHub",
+            DisplayName = "GitHub",
+            ClientId = Configuration["GitHub:ClientId"],
+            ClientSecret = Configuration["GitHub:ClientSecret"],
+            CallbackPath = new PathString("/signin-github"),
+            AuthorizationEndpoint = "https://github.com/login/oauth/authorize",
+            TokenEndpoint = "https://github.com/login/oauth/access_token",
+            UserInformationEndpoint = "https://api.github.com/user",
+            ClaimsIssuer = "OAuth2-Github",
+            //SaveTokensAsClaims = true,
+
+            // Retrieving user information is unique to each provider.
+            Events = new OAuthEvents {
+                OnCreatingTicket = async context => { await CreateGitHubAuthTicket(context); }
+            }
+        };
+        private static async Task CreateGitHubAuthTicket(OAuthCreatingTicketContext context)
+        {
+            // Get the GitHub user
+            var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            var response = await context.Backchannel.SendAsync(request, context.HttpContext.RequestAborted);
+            response.EnsureSuccessStatusCode();
+
+            var user = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+            AddClaims(context, user);
+        }
+        private static void AddClaims(OAuthCreatingTicketContext context, JObject user)
+        {
+            var identifier = user.Value<string>("id");
+            if (!string.IsNullOrEmpty(identifier))
+            {
+                context.Identity.AddClaim(new Claim(
+                    ClaimTypes.NameIdentifier, identifier,
+                    ClaimValueTypes.String, context.Options.ClaimsIssuer));
+            }
+
+            var userName = user.Value<string>("login");
+            if (!string.IsNullOrEmpty(userName))
+            {
+                context.Identity.AddClaim(new Claim(
+                    ClaimsIdentity.DefaultNameClaimType, userName,
+                    ClaimValueTypes.String, context.Options.ClaimsIssuer));
+            }
+
+            var name = user.Value<string>("name");
+            if (!string.IsNullOrEmpty(name))
+            {
+                context.Identity.AddClaim(new Claim(
+                    "urn:github:name", name,
+                    ClaimValueTypes.String, context.Options.ClaimsIssuer));
+            }
+
+            var link = user.Value<string>("url");
+            if (!string.IsNullOrEmpty(link))
+            {
+                context.Identity.AddClaim(new Claim(
+                    "urn:github:url", link,
+                    ClaimValueTypes.String, context.Options.ClaimsIssuer));
+            }
         }
     }
 }

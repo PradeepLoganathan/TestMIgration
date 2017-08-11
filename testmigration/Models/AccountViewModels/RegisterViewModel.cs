@@ -25,6 +25,15 @@ namespace testmigration.Models.AccountViewModels
 
         [Display(Name = "Role")]
         public string ApplicationRoleId { get; set; }
+       
+        [Display(Name = "DOB")]
+        public string DOB { get; set; }
+        
+        [Display(Name = "Name")]
+        public string Name { get; set; }
+        
+        [Display(Name = "PictureURL")]
+        public string PictureURL { get; set; }
 
         public List<SelectListItem> ApplicationRoles { get; set; }
     }

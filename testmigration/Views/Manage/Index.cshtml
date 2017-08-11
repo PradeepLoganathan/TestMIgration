@@ -10,6 +10,28 @@
     <h4>Change your account settings</h4>
     <hr />
     <dl class="dl-horizontal">
+        @if (Model.FullName != null)
+        {
+            <dt>Full Name:</dt>
+            <dd>
+
+
+                @(Model.FullName ?? "None")
+
+
+            </dd>
+        }
+        @if (Model.DOB != null && Model.DOB != string.Empty)
+        {
+            <dt>Date of Birth:</dt>
+            <dd>
+
+
+                @(Model.DOB ?? "None" )
+
+
+            </dd>
+        }
         <dt>Password:</dt>
         <dd>
             @if (Model.HasPassword)
@@ -70,6 +92,18 @@
             
         </dd>
         }
+        @if (Model.PictureUrl != null)
+        {
+            <dt>Photo:</dt>
+            <dd>
 
+
+                <img src=  @(Model.PictureUrl ?? "None")
+                     alt="Profile pic"
+                     asp-append-version="true" />
+
+
+            </dd>
+        }
     </dl>
 </div>

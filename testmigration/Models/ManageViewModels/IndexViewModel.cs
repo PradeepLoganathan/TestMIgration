@@ -19,5 +19,9 @@ namespace testmigration.Models.ManageViewModels
         public bool BrowserRemembered { get; set; }
 
         public bool IsAccessToAddEditUser { get; set; }
+
+        public string FullName { get; set; }
+        public string DOB { get; set; }
+        public string PictureUrl { get; set; }
     }
 }
