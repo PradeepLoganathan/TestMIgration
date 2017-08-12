@@ -10,12 +10,13 @@ using Microsoft.Extensions.Options;
 using testmigration.Models;
 using testmigration.Models.ManageViewModels;
 using testmigration.Services;
-
+using Microsoft.Extensions.Caching.Distributed;
 namespace testmigration.Controllers
 {
     [Authorize]
     public class ManageController : Controller
     {
+        private readonly IDistributedCache _distributedCache;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly string _externalCookieScheme;
@@ -29,7 +30,7 @@ namespace testmigration.Controllers
           IOptions<IdentityCookieOptions> identityCookieOptions,
           IEmailSender emailSender,
           ISmsSender smsSender,
-          ILoggerFactory loggerFactory, RoleManager<ApplicationRole> roleManager)
+          ILoggerFactory loggerFactory, RoleManager<ApplicationRole> roleManager, IDistributedCache distributedCache)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -38,6 +39,7 @@ namespace testmigration.Controllers
             _smsSender = smsSender;
             _logger = loggerFactory.CreateLogger<ManageController>();
             _roleManager = roleManager;
+            _distributedCache = distributedCache;
         }
 
         //
@@ -79,7 +81,17 @@ namespace testmigration.Controllers
              
 
             };
-            return View(model);
+            string email = _distributedCache.GetString("SignedUser");
+            if (email != null && email != string.Empty)
+            {
+                return View(model);
+            }
+            else
+            {
+                await _signInManager.SignOutAsync();
+                _logger.LogInformation(5, "Session key not found");
+                return RedirectToAction(nameof(HomeController.Index), "Home");
+            }
         }
 
         //

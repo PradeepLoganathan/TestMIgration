@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -15,6 +16,8 @@ using testmigration.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Newtonsoft.Json.Linq;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Redis;
 
 //using Microsoft.Owin.Security;
 namespace testmigration
@@ -46,13 +49,31 @@ namespace testmigration
             // Add framework services.
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(15);
+            });
+            services.AddIdentity<ApplicationUser, ApplicationRole>(options => {
 
-            services.AddIdentity<ApplicationUser, ApplicationRole>()
+                options.Cookies.ApplicationCookie.ExpireTimeSpan = TimeSpan.FromMinutes(15);
+
+            })
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
-            services.AddMvc();
+          
 
+            services.AddMvc();
+            services.AddSingleton<IDistributedCache>(
+                serviceProvider =>
+                new RedisCache(
+                    new RedisCacheOptions
+                    {
+                        Configuration = "localhost",
+                        InstanceName = "testMigration"
+
+                    }
+                ));
 
             // Add application services.
             services.AddTransient<IEmailSender, AuthMessageSender>();
@@ -80,6 +101,12 @@ namespace testmigration
             app.UseStaticFiles();
 
             app.UseIdentity();
+            //app.UseIdentity().UseCookieAuthentication(
+            //            new CookieAuthenticationOptions
+            //            {
+            //                ExpireTimeSpan = TimeSpan.FromMinutes(3)
+            //            }
+            //            );
             app.UseOAuthAuthentication(GitHubOptions);
             app.UseFacebookAuthentication(new FacebookOptions()
             {

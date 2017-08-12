@@ -14,6 +14,7 @@ using testmigration.Models.AccountViewModels;
 using testmigration.Services;
 using NotificationProviders;
 using BusinessManagement.Common;
+using Microsoft.Extensions.Caching.Distributed;
 namespace testmigration.Controllers
 {
     [Authorize]
@@ -27,14 +28,15 @@ namespace testmigration.Controllers
         private readonly ILogger _logger;
         private readonly string _externalCookieScheme;
         private SendGridEmailProvider _sendGridEmailProvider = new SendGridEmailProvider();
-        
+        private readonly IDistributedCache _distributedCache;
+
         public AccountController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             IOptions<IdentityCookieOptions> identityCookieOptions,
             IEmailSender emailSender,
             ISmsSender smsSender,
-            ILoggerFactory loggerFactory, RoleManager<ApplicationRole> roleManager)
+            ILoggerFactory loggerFactory, RoleManager<ApplicationRole> roleManager, IDistributedCache distributedCache)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -43,8 +45,9 @@ namespace testmigration.Controllers
             _smsSender = smsSender;
             _logger = loggerFactory.CreateLogger<AccountController>();
             _roleManager = roleManager;
+            _distributedCache = distributedCache;
         }
-
+        
         //
         // GET: /Account/Login
         [HttpGet]
@@ -73,7 +76,7 @@ namespace testmigration.Controllers
                 var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
-                    
+                    _distributedCache.SetString("SignedUser", model.Email);
                     _logger.LogInformation(1, "User logged in.");
                     return RedirectToLocal(returnUrl);
                 }
@@ -193,6 +196,8 @@ namespace testmigration.Controllers
             var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false);
             if (result.Succeeded)
             {
+                var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+                _distributedCache.SetString("SignedUser", email);
                 _logger.LogInformation(5, "User logged in with {Name} provider.", info.LoginProvider);
                 
                 return RedirectToLocal(returnUrl);
@@ -232,7 +237,7 @@ namespace testmigration.Controllers
                 {
                     return View("ExternalLoginFailure");
                 }
-                
+                _distributedCache.SetString("SignedUser", model.Email);
                 var name = info.Principal.FindFirstValue(ClaimTypes.Name);
                 var dob = info.Principal.FindFirstValue(ClaimTypes.DateOfBirth);
                 var phoneNumber = info.Principal.FindFirstValue(ClaimTypes.MobilePhone);
