@@ -35,6 +35,12 @@ namespace testmigration.Models.AccountViewModels
         [Display(Name = "PictureURL")]
         public string PictureURL { get; set; }
 
+        [Display(Name = "Response")]
+        public string Response { get; set; }
+
+        [Display(Name = "Identifier")]
+        public string Identifier { get; set; }
+
         public List<SelectListItem> ApplicationRoles { get; set; }
     }
 }

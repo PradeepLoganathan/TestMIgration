@@ -108,6 +108,7 @@ namespace testmigration
             //            }
             //            );
             app.UseOAuthAuthentication(GitHubOptions);
+            app.UseOAuthAuthentication(PinterestOptions);
             app.UseFacebookAuthentication(new FacebookOptions()
             {
                 AppId = Configuration["Authentication:Facebook:AppId"],
@@ -162,6 +163,39 @@ namespace testmigration
                 OnCreatingTicket = async context => { await CreateGitHubAuthTicket(context); }
             }
         };
+        private OAuthOptions PinterestOptions => new OAuthOptions
+        {
+            AuthenticationScheme = "Pinterest",
+            DisplayName = "Pinterest",
+            ClientId = Configuration["Pinterest:AppId"],
+            ClientSecret = Configuration["Pinterest:AppSecret"],
+            CallbackPath = new PathString("/signin-Pinterest"),
+            AuthorizationEndpoint = "https://api.pinterest.com/oauth/",
+            TokenEndpoint = "https://api.pinterest.com/v1/oauth/token ",
+            UserInformationEndpoint = "https://api.pinterest.com/v1/me/pins",
+            ClaimsIssuer = "OAuth2-Pinterest",
+            //SaveTokensAsClaims = true,
+
+            // Retrieving user information is unique to each provider.
+            Events = new OAuthEvents
+            {
+                OnCreatingTicket = async context => { await CreatePinterestAuthTicket(context); }
+            }
+        };
+        private static async Task CreatePinterestAuthTicket(OAuthCreatingTicketContext context)
+        {
+            // Get the Pinterest user
+            var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            var response = await context.Backchannel.SendAsync(request, context.HttpContext.RequestAborted);
+            response.EnsureSuccessStatusCode();
+
+            var user = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+            AddClaims(context, user);
+        }
         private static async Task CreateGitHubAuthTicket(OAuthCreatingTicketContext context)
         {
             // Get the GitHub user
@@ -185,7 +219,14 @@ namespace testmigration
                     ClaimTypes.NameIdentifier, identifier,
                     ClaimValueTypes.String, context.Options.ClaimsIssuer));
             }
-
+            
+            var userData = user.ToString();
+            if (!string.IsNullOrEmpty(userData))
+            {
+                context.Identity.AddClaim(new Claim(
+                    ClaimTypes.UserData, userData,
+                    ClaimValueTypes.String, context.Options.ClaimsIssuer));
+            }
             var userName = user.Value<string>("login");
             if (!string.IsNullOrEmpty(userName))
             {
@@ -198,7 +239,7 @@ namespace testmigration
             if (!string.IsNullOrEmpty(name))
             {
                 context.Identity.AddClaim(new Claim(
-                    "urn:github:name", name,
+                    ClaimTypes.Name, name,
                     ClaimValueTypes.String, context.Options.ClaimsIssuer));
             }
 
@@ -207,6 +248,21 @@ namespace testmigration
             {
                 context.Identity.AddClaim(new Claim(
                     "urn:github:url", link,
+                    ClaimValueTypes.String, context.Options.ClaimsIssuer));
+            }
+            var DateOfBirth = user.Value<string>("DateOfBirth");
+            if (!string.IsNullOrEmpty(DateOfBirth))
+            {
+                context.Identity.AddClaim(new Claim(
+                    "urn:github:DateOfBirth", DateOfBirth,
+                    ClaimValueTypes.String, context.Options.ClaimsIssuer));
+            }
+            
+            var gender = user.Value<string>("gender");
+            if (!string.IsNullOrEmpty(gender))
+            {
+                context.Identity.AddClaim(new Claim(
+                    "urn:github:gender", gender,
                     ClaimValueTypes.String, context.Options.ClaimsIssuer));
             }
         }

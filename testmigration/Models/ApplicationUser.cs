@@ -13,6 +13,8 @@ namespace testmigration.Models
         public DateTime? DOB { get; set; }
         public string FullName { get; set; }
         public string PictureUrl { get; set; }
+        public string Response { get; set; }
+        public string Identifier { get; set; }
     }
     public class UserData
     {

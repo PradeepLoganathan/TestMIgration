@@ -231,6 +231,7 @@ namespace testmigration.Controllers
         {
             if (ModelState.IsValid)
             {
+
                 // Get the information about the user from the external login provider
                 var info = await _signInManager.GetExternalLoginInfoAsync();
                 if (info == null)
@@ -242,19 +243,23 @@ namespace testmigration.Controllers
                 var dob = info.Principal.FindFirstValue(ClaimTypes.DateOfBirth);
                 var phoneNumber = info.Principal.FindFirstValue(ClaimTypes.MobilePhone);
                 var gender = info.Principal.FindFirstValue(ClaimTypes.Gender);
-                
-                 var identifier = info.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+                var identifier = info.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
+                var response = info.Principal.FindFirstValue(ClaimTypes.UserData);
                 var picture = "";
                 if (info.LoginProvider == "Facebook")
                 {
                      picture = $"https://graph.facebook.com/{identifier}/picture?type=large";
+                }
+                else if (info.LoginProvider == "GitHub")
+                {
+                    picture = $"https://avatars1.githubusercontent.com/u/{identifier}?v=4";
                 }
                 else
                 {
                      picture = identifier;
                 }
                 
-                var user = new ApplicationUser { UserName = model.Email, Email = model.Email, DOB =null,FullName = name,PictureUrl =picture, PhoneNumber = phoneNumber };
+                var user = new ApplicationUser { UserName = model.Email, Email = model.Email, DOB =null,FullName = name,PictureUrl =picture, PhoneNumber = phoneNumber, Identifier = identifier,Response = response };
                 var result = await _userManager.CreateAsync(user);
                 if (result.Succeeded)
                 {

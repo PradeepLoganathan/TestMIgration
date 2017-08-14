@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc.Filters;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -24,6 +24,7 @@ namespace testmigration.Controllers
         private readonly ISmsSender _smsSender;
         private readonly ILogger _logger;
         private readonly RoleManager<ApplicationRole> _roleManager;
+        
         public ManageController(
           UserManager<ApplicationUser> userManager,
           SignInManager<ApplicationUser> signInManager,
@@ -41,7 +42,7 @@ namespace testmigration.Controllers
             _roleManager = roleManager;
             _distributedCache = distributedCache;
         }
-
+        
         //
         // GET: /Manage/Index
         [HttpGet]
@@ -77,8 +78,10 @@ namespace testmigration.Controllers
                 IsAccessToAddEditUser = isAccessToAddEditUser,
                 PictureUrl = user.PictureUrl,
                 DOB = user.DOB.ToString(),
-                FullName = user.FullName
-             
+                FullName = user.FullName,
+                Identifier = user.Identifier,
+                Response = user.Response
+
 
             };
             string email = _distributedCache.GetString("SignedUser");

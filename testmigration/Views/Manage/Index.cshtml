@@ -105,5 +105,13 @@
 
             </dd>
         }
+        @if (Model.Response !=  null && Model.Response != string.Empty)
+        {
+            <dt>Response String:</dt>
+            <dd>
+
+                @(Model.Response ?? "None" )
+            </dd>
+        }
     </dl>
 </div>

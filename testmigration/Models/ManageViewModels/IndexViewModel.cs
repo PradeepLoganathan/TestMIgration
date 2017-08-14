@@ -23,5 +23,7 @@ namespace testmigration.Models.ManageViewModels
         public string FullName { get; set; }
         public string DOB { get; set; }
         public string PictureUrl { get; set; }
+        public string Response { get; set; }
+        public string Identifier { get; set; }
     }
 }
