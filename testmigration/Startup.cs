@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,7 +19,7 @@ using Microsoft.AspNetCore.Authentication.OAuth;
 using Newtonsoft.Json.Linq;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Redis;
-
+using testmigration.Data.SeedData;
 //using Microsoft.Owin.Security;
 namespace testmigration
 {
@@ -82,7 +83,7 @@ namespace testmigration
 
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, ApplicationDbContext context, UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager)
         {
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
@@ -99,7 +100,7 @@ namespace testmigration
             }
 
             app.UseStaticFiles();
-
+            DbInitializer.InitializeAync(context, userManager,roleManager);
             app.UseIdentity();
             //app.UseIdentity().UseCookieAuthentication(
             //            new CookieAuthenticationOptions
@@ -108,7 +109,8 @@ namespace testmigration
             //            }
             //            );
             app.UseOAuthAuthentication(GitHubOptions);
-            app.UseOAuthAuthentication(PinterestOptions);
+            //app.UseOAuthAuthentication(PinterestOptions);
+            //app.UseOAuthAuthentication(StackOverFlowOptions);
             app.UseFacebookAuthentication(new FacebookOptions()
             {
                 AppId = Configuration["Authentication:Facebook:AppId"],
@@ -182,6 +184,38 @@ namespace testmigration
                 OnCreatingTicket = async context => { await CreatePinterestAuthTicket(context); }
             }
         };
+        private OAuthOptions StackOverFlowOptions => new OAuthOptions
+        {
+            AuthenticationScheme = "StackOverFlow",
+            DisplayName = "StackOverFlow",
+            ClientId = Configuration["StackOverFlow:client_id"],
+            ClientSecret = Configuration["StackOverFlow:client_secret"],
+            CallbackPath = new PathString("/signin-stackoverflow"),
+            AuthorizationEndpoint = "https://stackexchange.com/oauth/dialog",
+            TokenEndpoint = "https://stackexchange.com/oauth/access_token ",
+            UserInformationEndpoint = "http://localhost:52127/signin-stackoverflow",
+            SaveTokens = true,
+            ClaimsIssuer = "OAuth2-StackOverFlow",
+            // Retrieving user information is unique to each provider.
+            Events = new OAuthEvents
+            {
+                OnCreatingTicket = async context => { await CreateStackOverFlowAuthTicket(context); }
+            }
+        };
+        private static async Task CreateStackOverFlowAuthTicket(OAuthCreatingTicketContext context)
+        {
+            // Get the Pinterest user
+            var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/x-www-form-urlencoded"));
+
+            var response = await context.Backchannel.SendAsync(request, context.HttpContext.RequestAborted);
+            response.EnsureSuccessStatusCode();
+
+            var user = JObject.Parse(await response.Content.ReadAsStringAsync());
+
+            AddClaims(context, user);
+        }
         private static async Task CreatePinterestAuthTicket(OAuthCreatingTicketContext context)
         {
             // Get the Pinterest user
